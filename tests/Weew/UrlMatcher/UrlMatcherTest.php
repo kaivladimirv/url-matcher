@@ -1,13 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Weew\UrlMatcher;
 
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 use Weew\UrlMatcher\MatchPattern;
 use Weew\UrlMatcher\UrlMatcher;
 
-class UrlMatcherTest extends PHPUnit_Framework_TestCase {
-    public function test_match() {
+class UrlMatcherTest extends TestCase
+{
+    public function test_match(): void
+    {
         $matcher = new UrlMatcher();
         $this->assertTrue($matcher->match('foo/bar', 'foo/bar'));
         $this->assertTrue($matcher->match('foo/{name}', 'foo/bar'));
@@ -23,7 +27,8 @@ class UrlMatcherTest extends PHPUnit_Framework_TestCase {
         $this->assertFalse($matcher->match('foo/{name}/yolo/{nickname}', 'foo/bar/baz'));
     }
 
-    public function test_match_with_default_patterns() {
+    public function test_match_with_default_patterns(): void
+    {
         $matcher = new UrlMatcher();
         $this->assertTrue($matcher->match('foo/{any}', 'foo/bar'));
         $this->assertTrue($matcher->match('foo/{any}', 'foo/bar/baz'));
@@ -34,7 +39,8 @@ class UrlMatcherTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($matcher->match('foo/{any?}', 'foo'));
     }
 
-    public function test_match_with_preset_patterns() {
+    public function test_match_with_preset_patterns(): void
+    {
         $matcher = new UrlMatcher();
         $matcher->addPattern('id', '[0-9]+');
         $this->assertTrue($matcher->match('foo/{id}', 'foo/123'));
@@ -45,13 +51,15 @@ class UrlMatcherTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($matcher->match('foo/{id?}/{any?}', 'foo/123/yolo'));
     }
 
-    public function test_match_with_inline_presets() {
+    public function test_match_with_inline_presets(): void
+    {
         $matcher = new UrlMatcher();
         $this->assertTrue($matcher->match('foo/{id}', 'foo/123', ['id' => '[0-9]+']));
         $this->assertFalse($matcher->match('foo/{id}', 'foo/a23', ['id' => '[0-9]+']));
     }
 
-    public function test_parse() {
+    public function test_parse(): void
+    {
         $matcher = new UrlMatcher();
 
         $dict = $matcher->parse('foo/{id}', 'foo/bar');
@@ -70,7 +78,8 @@ class UrlMatcherTest extends PHPUnit_Framework_TestCase {
         $this->assertNull($dict->get('name'));
     }
 
-    public function test_parse_with_preset_patterns() {
+    public function test_parse_with_preset_patterns(): void
+    {
         $matcher = new UrlMatcher();
 
         $dict = $matcher->parse('foo/{any}', 'foo/bar/baz');
@@ -86,7 +95,8 @@ class UrlMatcherTest extends PHPUnit_Framework_TestCase {
         $this->assertNull($dict->get('any'));
     }
 
-    public function test_parse_with_inline_patterns() {
+    public function test_parse_with_inline_patterns(): void
+    {
         $matcher = new UrlMatcher();
 
         $dict = $matcher->parse('foo/{id}', 'foo/123', ['id' => '[0-9]+']);
@@ -110,14 +120,16 @@ class UrlMatcherTest extends PHPUnit_Framework_TestCase {
         $this->assertNull($dict->get('yolo'));
     }
 
-    public function test_get_and_set_patterns() {
+    public function test_get_and_set_patterns(): void
+    {
         $matcher = new UrlMatcher();
         $patterns = [new MatchPattern('foo', 'bar')];
         $matcher->setPatterns($patterns);
         $this->assertTrue($matcher->getPatterns() === $patterns);
     }
 
-    public function test_replace() {
+    public function test_replace(): void
+    {
         $matcher = new UrlMatcher();
         $this->assertEquals(
             '/baz/bar/yolo/baz',
@@ -125,7 +137,8 @@ class UrlMatcherTest extends PHPUnit_Framework_TestCase {
         );
     }
 
-    public function test_replace_in_host() {
+    public function test_replace_in_host(): void
+    {
         $matcher = new UrlMatcher();
         $this->assertEquals(
             'baz.yolo.swag/bar/yolo/baz',

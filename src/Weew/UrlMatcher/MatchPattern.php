@@ -1,99 +1,53 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Weew\UrlMatcher;
 
-use InvalidArgumentException;
+class MatchPattern implements MatchPatternInterface
+{
+    private string $name;
+    private string $pattern;
+    private string $regexName;
+    private string $regexPattern;
 
-class MatchPattern implements IMatchPattern {
-    /**
-     * @var sting
-     */
-    protected $name;
-
-    /**
-     * @var string
-     */
-    protected $pattern;
-
-    /**
-     * @var string
-     */
-    protected $regexName;
-
-    /**
-     * @var string
-     */
-    protected $regexPattern;
-
-    /**
-     * MatchPattern constructor.
-     *
-     * @param $name
-     * @param $pattern
-     * @param bool $optional
-     */
-    public function __construct($name, $pattern, $optional = false) {
-        if ( ! is_string($name)) {
-            throw new InvalidArgumentException('Name name must be a string.');
-        }
-
-        if ( ! is_string($pattern)) {
-            throw new InvalidArgumentException('Pattern must be a string.');
-        }
-
+    public function __construct(string $name, string $pattern, bool $optional = false)
+    {
         $this->name = $name;
         $this->pattern = $pattern;
         $this->regexName = $this->createRegexName($name, $optional);
         $this->regexPattern = $this->createRegexPattern($pattern, $optional);
     }
 
-    /**
-     * @return mixed
-     */
-    public function getName() {
+    public function getName(): string
+    {
         return $this->name;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getPattern() {
+    public function getPattern(): string
+    {
         return $this->pattern;
     }
 
-    /**
-     * @return string
-     */
-    public function getRegexName() {
+    public function getRegexName(): string
+    {
         return $this->regexName;
     }
 
-    /**
-     * @return string
-     */
-    public function getRegexPattern() {
+    public function getRegexPattern(): string
+    {
         return $this->regexPattern;
     }
 
-    /**
-     * @param $name
-     * @param $optional
-     *
-     * @return string
-     */
-    protected function createRegexName($name, $optional) {
+    private function createRegexName(string $name, bool $optional): string
+    {
         return $optional
             ? '#\{' . preg_quote($name) . '\?\}#'
             : '#\{' . preg_quote($name) . '\}#';
     }
 
-    /**
-     * @param $pattern
-     * @param $optional
-     *
-     * @return string
-     */
-    protected function createRegexPattern($pattern, $optional) {
+    private function createRegexPattern(string $pattern, bool $optional): string
+    {
         return $optional
             ? '(' . $pattern . ')?'
             : '(' . $pattern . ')';

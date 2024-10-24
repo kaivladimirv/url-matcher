@@ -1,31 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Weew\UrlMatcher;
 
 use Weew\Collections\Dictionary;
-use Weew\Collections\IDictionary;
+use Weew\Collections\DictionaryInterface;
 
-class UrlMatcher implements IUrlMatcher {
+class UrlMatcher implements UrlMatcherInterface
+{
     /**
-     * @var IMatchPattern[]
+     * @var MatchPatternInterface[]
      */
-    protected $patterns = [];
+    private array $patterns = [];
 
-    /**
-     * UrlMatcher constructor.
-     */
-    public function __construct() {
+    public function __construct()
+    {
         $this->addDefaultPatterns();
     }
 
     /**
-     * @param $pattern
-     * @param $path
-     * @param array $patterns
-     *
-     * @return bool
+     * @param array<string, string> $patterns
      */
-    public function match($pattern, $path, array $patterns = []) {
+    public function match(string $pattern, string $path, array $patterns = []): bool
+    {
         $patterns = $this->mergeWithLocalPatterns($patterns);
 
         $path = $this->addTrailingSlash($path);
@@ -36,19 +34,16 @@ class UrlMatcher implements IUrlMatcher {
             $matchedPath = $this->addTrailingSlash(array_get($matches, '0.0'));
 
             return $matchedPath == $path;
-        };
+        }
 
         return false;
     }
 
     /**
-     * @param $pattern
-     * @param $path
-     * @param array $patterns
-     *
-     * @return IDictionary
+     * @param array<string, string> $patterns
      */
-    public function parse($pattern, $path, array $patterns = []) {
+    public function parse(string $pattern, string $path, array $patterns = []): DictionaryInterface
+    {
         $patterns = $this->mergeWithLocalPatterns($patterns);
         $names = $this->extractParameterNames($pattern);
         $values = $this->extractParameterValues($pattern, $path, $patterns);
@@ -57,26 +52,13 @@ class UrlMatcher implements IUrlMatcher {
         return new Dictionary($parameters);
     }
 
-    /**
-     * @param string $path
-     * @param string $key
-     * @param string $value
-     *
-     * @return string
-     */
-    public function replace($path, $key, $value) {
-        $path = str_replace(s('{%s}', $key), $value, $path);
-
-        return $path;
+    public function replace(string $path, string $key, string $value): string
+    {
+        return str_replace(s('{%s}', $key), $value, $path);
     }
 
-    /**
-     * @param string $path
-     * @param array $replacements
-     *
-     * @return string
-     */
-    public function replaceAll($path, array $replacements) {
+    public function replaceAll(string $path, array $replacements): string
+    {
         foreach ($replacements as $key => $value) {
             $path = $this->replace($path, $key, $value);
         }
@@ -85,49 +67,37 @@ class UrlMatcher implements IUrlMatcher {
     }
 
     /**
-     * @return IMatchPattern[]
+     * @return MatchPatternInterface[]
      */
-    public function getPatterns() {
+    public function getPatterns(): array
+    {
         return $this->patterns;
     }
 
     /**
-     * @param IMatchPattern[] $patterns
-     */
-    public function setPatterns(array $patterns) {
+     * @param array<array-key, MatchPatternInterface> $patterns
+ */
+    public function setPatterns(array $patterns): void
+    {
         $this->patterns = $patterns;
     }
 
-    /**
-     * @param $name
-     * @param $pattern
-     */
-    public function addPattern($name, $pattern) {
+    public function addPattern(string $name, string $pattern): void
+    {
         array_unshift($this->patterns, $this->createPattern($name, $pattern));
         array_unshift($this->patterns, $this->createPattern($name, $pattern, true));
     }
 
-    /**
-     * @param $path
-     * @param IMatchPattern[] $patterns
-     *
-     * @return string
-     */
-    protected function createRegexPattern($path, array $patterns = []) {
+    private function createRegexPattern(string $path, array $patterns = []): string
+    {
         $pattern = $this->applyCustomRegexPatterns($path, $patterns);
         $pattern = $this->applyStandardRegexPatterns($pattern);
-        $pattern = s('#%s#', $pattern);
 
-        return $pattern;
+        return s('#%s#', $pattern);
     }
 
-    /**
-     * @param $path
-     * @param IMatchPattern[] $patterns
-     *
-     * @return string
-     */
-    protected function applyCustomRegexPatterns($path, array $patterns) {
+    private function applyCustomRegexPatterns(string $path, array $patterns): string
+    {
         foreach ($patterns as $pattern) {
             $path = preg_replace([$pattern->getRegexName()], $pattern->getRegexPattern(), $path);
         }
@@ -135,27 +105,17 @@ class UrlMatcher implements IUrlMatcher {
         return $path;
     }
 
-    /**
-     * @param $path
-     *
-     * @return string
-     */
-    protected function applyStandardRegexPatterns($path) {
-        $pattern = preg_replace('#\{([a-zA-Z0-9_-]+)\?\}#', '([^/]+)?', $path);
-        $pattern = preg_replace('#\{([a-zA-Z0-9_-]+)\}#', '([^/]+)', $pattern);
-
-        return $pattern;
+    private function applyStandardRegexPatterns(string $path): string
+    {
+        $pattern = preg_replace('#\{([a-zA-Z0-9_-]+)\?}#', '([^/]+)?', $path);
+        return preg_replace('#\{([a-zA-Z0-9_-]+)}#', '([^/]+)', $pattern);
     }
 
-    /**
-     * @param $path
-     *
-     * @return array
-     */
-    protected function extractParameterNames($path) {
+    private function extractParameterNames(string $path): array
+    {
         $names = [];
         $matches = [];
-        preg_match_all('#\{([a-zA-Z0-9?]+)\}#', $path, $matches);
+        preg_match_all('#\{([a-zA-Z0-9?]+)}#', $path, $matches);
 
         foreach (array_get($matches, 1, []) as $name) {
             $names[] = str_replace('?', '', $name);
@@ -165,13 +125,10 @@ class UrlMatcher implements IUrlMatcher {
     }
 
     /**
-     * @param $pattern
-     * @param $path
-     * @param IMatchPattern[] $patterns
-     *
-     * @return array
+     * @param MatchPatternInterface[] $patterns
      */
-    protected function extractParameterValues($pattern, $path, array $patterns = []) {
+    private function extractParameterValues(string $pattern, string $path, array $patterns = []): array
+    {
         $path = $this->addTrailingSlash($path);
         $matches = [];
 
@@ -179,17 +136,11 @@ class UrlMatcher implements IUrlMatcher {
         preg_match_all($pattern, $path, $matches);
         array_shift($matches);
 
-        $values = $this->processParameterValues($matches);
-
-        return $values;
+        return $this->processParameterValues($matches);
     }
 
-    /**
-     * @param array $matches
-     *
-     * @return array
-     */
-    protected function processParameterValues(array $matches) {
+    private function processParameterValues(array $matches): array
+    {
         $values = [];
 
         foreach ($matches as $group) {
@@ -209,25 +160,17 @@ class UrlMatcher implements IUrlMatcher {
         return $values;
     }
 
-    /**
-     * @param $string
-     *
-     * @return string
-     */
-    protected function addTrailingSlash($string) {
-        if ( ! str_ends_with($string, '/')) {
+    private function addTrailingSlash(string $string): string
+    {
+        if (!str_ends_with($string, '/')) {
             $string .= '/';
         }
 
         return $string;
     }
 
-    /**
-     * @param $string
-     *
-     * @return string
-     */
-    protected function removeTrailingSlash($string) {
+    private function removeTrailingSlash(string $string): string
+    {
         if (str_ends_with($string, '/')) {
             $string = substr($string, 0, -1);
         }
@@ -236,11 +179,10 @@ class UrlMatcher implements IUrlMatcher {
     }
 
     /**
-     * @param array $patterns
-     *
-     * @return IMatchPattern[]
+     * @return MatchPatternInterface[]
      */
-    protected function mergeWithLocalPatterns(array $patterns) {
+    private function mergeWithLocalPatterns(array $patterns): array
+    {
         $mergedPatterns = $this->patterns;
 
         foreach ($patterns as $name => $pattern) {
@@ -251,21 +193,16 @@ class UrlMatcher implements IUrlMatcher {
         return $mergedPatterns;
     }
 
-    /**
-     * @param $name
-     * @param $pattern
-     * @param bool $optional
-     *
-     * @return IMatchPattern
-     */
-    protected function createPattern($name, $pattern, $optional = false) {
+    private function createPattern(string $name, string $pattern, bool $optional = false): MatchPatternInterface
+    {
         return new MatchPattern($name, $pattern, $optional);
     }
 
     /**
      * Register default patterns.
      */
-    protected function addDefaultPatterns() {
+    private function addDefaultPatterns(): void
+    {
         $this->addPattern('any', '.+');
     }
 }
